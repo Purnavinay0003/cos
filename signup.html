@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign-Up Form</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@200;300;400;500;600;700&display=swap");
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Open Sans", sans-serif;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      width: 100%;
+      padding: 0 10px;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: url("d10.jpeg"), #000;
+      background-position: center;
+      background-size: cover;
+    }
+
+    .wrapper {
+      width: 400px;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    .input-field {
+      position: relative;
+      border-bottom: 2px solid #ccc;
+      margin: 15px 0;
+    }
+
+    .input-field label {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      color: #fff;
+      font-size: 16px;
+      pointer-events: none;
+      transition: 0.15s ease;
+    }
+
+    .input-field input {
+      width: 100%;
+      height: 40px;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .input-field input:focus~label,
+    .input-field input:valid~label {
+      font-size: 0.8rem;
+      top: 10px;
+      transform: translateY(-120%);
+    }
+
+    .wrapper a {
+      color: #efefef;
+      text-decoration: none;
+    }
+
+    .wrapper a:hover {
+      text-decoration: underline;
+    }
+
+    button {
+      background: #fff;
+      color: #000;
+      font-weight: 600;
+      border: none;
+      padding: 12px 20px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 16px;
+      border: 2px solid transparent;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      color: #fff;
+      border-color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .login {
+      text-align: center;
+      margin-top: 30px;
+      color: #fff;
+    }
+
+    .error {
+      color: #ff6b6b;
+      margin-top: 10px;
+    }
+
+    #successMessage {
+      display: none;
+      color: #4CAF50;
+      margin-top: 10px;
+    }
+
+    #loadingMessage {
+      display: none;
+      color: #fff;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <form id="signupForm">
+      <h2>Sign Up</h2>
+      <div class="input-field">
+        <input type="text" id="fullName" required>
+        <label>Enter your full name</label>
+      </div>
+      <div class="input-field">
+        <input type="email" id="email" required>
+        <label>Enter your email</label>
+      </div>
+      <div class="input-field">
+        <input type="password" id="password" required>
+        <label>Create a password</label>
+      </div>
+      <div class="input-field">
+        <input type="password" id="confirmPassword" required>
+        <label>Confirm your password</label>
+      </div>
+      <button type="submit">Sign Up</button>
+      <div id="errorMessage" class="error"></div>
+      <div id="loadingMessage"></div>
+      <div id="successMessage"></div>
+      <div class="login">
+        <p>Already have an account? <a href="login.html">Log In</a></p>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBR4pKLo_jfwfjR5peHnP6naeJlAEEFe7M",
+      authDomain: "fresh-5a5cb.firebaseapp.com",
+      projectId: "fresh-5a5cb",
+      storageBucket: "fresh-5a5cb.appspot.com",
+      messagingSenderId: "554862002111",
+      appId: "1:554862002111:web:d2cc5e258210106561ab0a"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // Handle sign-up form submission
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const fullName = document.getElementById('fullName').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const errorMessage = document.getElementById('errorMessage');
+      const loadingMessage = document.getElementById('loadingMessage');
+      const successMessage = document.getElementById('successMessage');
+
+      errorMessage.textContent = '';
+      loadingMessage.style.display = 'none';
+      successMessage.style.display = 'none';
+
+      // Validate inputs
+      if (!fullName || !email || !password || !confirmPassword) {
+        errorMessage.textContent = 'All fields are required.';
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        errorMessage.textContent = 'Passwords do not match.';
+        return;
+      }
+
+      if (password.length < 6) {
+        errorMessage.textContent = 'Password must be at least 6 characters long.';
+        return;
+      }
+
+      // Show loading message
+      loadingMessage.textContent = 'Processing your sign-up...';
+      loadingMessage.style.display = 'block';
+
+      try {
+        // Register user with Firebase
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+
+        // Display success message
+        successMessage.textContent = `Thank you for signing up, ${fullName}! Welcome to our platform.`;
+        successMessage.style.display = 'block';
+
+        // Redirect to home page after successful sign-up
+    setTimeout(() => {
+      window.location.href = 'frontpage.html'; // Redirect to home page (adjust the path as needed)
+    }, 2000); // Wait 2 seconds before redirecting
+
+
+        // Reset form
+        document.getElementById('signupForm').reset();
+      } catch (error) {
+        errorMessage.textContent = error.message;
+      } finally {
+        loadingMessage.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
